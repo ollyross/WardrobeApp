@@ -179,7 +179,15 @@ async function resizeImage(file){
       throw new Error('This looks like an iPhone HEIC photo, and the converter needed for it did not load. Please reload the page and try again, or take/upload a JPG instead.');
     }
     try{
-      const converted = await window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 });
+      let converted;
+      try{
+        converted = await window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 });
+      } catch(firstErr){
+        // Some HEIC containers (e.g. Live Photos, bursts) hold more than one
+        // image and reject a single-image request -- retry asking for all
+        // of them and just use the first (primary) frame.
+        converted = await window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85, multiple: true });
+      }
       workingFile = Array.isArray(converted) ? converted[0] : converted;
     } catch(err){
       throw new Error('This looks like an iPhone HEIC photo, which couldn\'t be converted here. In your phone\'s Camera settings, switch Formats to "Most Compatible", or take/upload a JPG instead.');
