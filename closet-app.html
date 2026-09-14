@@ -155,12 +155,44 @@ function switchUser(){
   render();
 }
 
-function resizeImage(file){
-  return new Promise((resolve, reject)=>{
-    if(!file || !file.type || file.type.indexOf('image') === -1){
-      reject(new Error('That file did not look like a photo -- try picking it again.'));
-      return;
+function isHeicFile(file){
+  const type = (file.type || '').toLowerCase();
+  const name = (file.name || '').toLowerCase();
+  return type === 'image/heic' || type === 'image/heif' || /\.hei[cf]$/.test(name);
+}
+
+// HEIC/HEIF (the default format iPhone cameras save to) can't be decoded by
+// <img>/canvas in most browsers, so it's converted to JPEG first using a
+// lazy-loaded decoder -- only fetched the first time it's actually needed.
+let heic2anyLoad = null;
+function loadHeic2any(){
+  if(window.heic2any) return Promise.resolve(window.heic2any);
+  if(heic2anyLoad) return heic2anyLoad;
+  heic2anyLoad = new Promise((resolve, reject)=>{
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+    script.onload = () => window.heic2any ? resolve(window.heic2any) : reject(new Error('load-failed'));
+    script.onerror = () => reject(new Error('load-failed'));
+    document.head.appendChild(script);
+  }).catch(err => { heic2anyLoad = null; throw err; });
+  return heic2anyLoad;
+}
+
+async function resizeImage(file){
+  if(!file || (file.type && file.type.indexOf('image') === -1 && !isHeicFile(file))){
+    throw new Error('That file did not look like a photo -- try picking it again.');
+  }
+  let workingFile = file;
+  if(isHeicFile(file)){
+    try{
+      const heic2any = await loadHeic2any();
+      const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 });
+      workingFile = Array.isArray(converted) ? converted[0] : converted;
+    } catch(err){
+      throw new Error('This looks like an iPhone HEIC photo, which couldn\'t be converted here. In your phone\'s Camera settings, switch Formats to "Most Compatible", or take/upload a JPG instead.');
     }
+  }
+  return new Promise((resolve, reject)=>{
     const reader = new FileReader();
     reader.onload = (e)=>{
       const img = new Image();
@@ -183,7 +215,7 @@ function resizeImage(file){
       img.src = e.target.result;
     };
     reader.onerror = () => reject(new Error('Could not read that photo -- try a different one.'));
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(workingFile);
   });
 }
 
