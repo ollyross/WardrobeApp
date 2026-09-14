@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Closet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#E7DECC;
+    --card:#FBF7EF;
+    --ink:#241F2E;
+    --ink-soft:#736C7C;
+    --rust:#A6503F;
+    --rust-dark:#7E3B2E;
+    --sage:#6F7C58;
+    --line:#D6C9AC;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    min-height:100vh;
+  }
+  #root{max-width:520px;margin:0 auto;min-height:100vh;padding-bottom:96px;position:relative;}
+  h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:600;margin:0;}
+  .header{padding:28px 20px 16px;display:flex;justify-content:space-between;align-items:flex-end;}
+  .wordmark{font-size:28px;letter-spacing:-0.01em;}
+  .switchuser{font-size:12.5px;color:var(--ink-soft);background:none;border:none;text-decoration:underline;cursor:pointer;padding:0;font-family:inherit;}
+  .chiprow{display:flex;gap:8px;overflow-x:auto;padding:0 20px 16px;scrollbar-width:none;}
+  .chiprow::-webkit-scrollbar{display:none;}
+  .chip{flex:0 0 auto;padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink-soft);font-size:13px;cursor:pointer;white-space:nowrap;}
+  .chip.active{background:var(--ink);color:var(--card);border-color:var(--ink);}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:4px 20px 20px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;}
+  .card img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:#e4dcc8;}
+  .card .meta{padding:9px 11px 11px;}
+  .card .cat{font-size:13px;font-weight:600;}
+  .card .sub{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;position:relative;top:-1px;}
+  .empty{padding:60px 30px;text-align:center;color:var(--ink-soft);}
+  .empty h2{color:var(--ink);font-size:20px;margin-bottom:8px;}
+  .empty p{font-size:14.5px;line-height:1.5;margin:0;}
+  .bottombar{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:16px 20px 22px;background:linear-gradient(to top, var(--paper) 60%, transparent);}
+  .bottombar-inner{max-width:520px;width:100%;}
+  .btn-primary{width:100%;background:var(--rust);color:#FBF2ED;border:none;border-radius:999px;padding:15px;font-size:15.5px;font-weight:600;cursor:pointer;font-family:inherit;}
+  .btn-primary:active{background:var(--rust-dark);}
+  .btn-ghost{width:100%;background:none;color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:14px;font-size:15px;cursor:pointer;font-family:inherit;margin-top:10px;}
+  .login-wrap{padding:60px 24px;}
+  .login-wrap h1{font-size:26px;margin-bottom:10px;}
+  .login-wrap p{color:var(--ink-soft);font-size:14.5px;line-height:1.5;margin:0 0 24px;}
+  input[type=text],select,textarea{
+    width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:10px;
+    background:var(--card);color:var(--ink);font-size:15px;font-family:inherit;margin-bottom:14px;
+  }
+  label{display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;font-weight:600;text-transform:none;}
+  .overlay{position:fixed;inset:0;background:rgba(36,31,46,0.45);display:flex;align-items:flex-end;z-index:50;}
+  .sheet{background:var(--paper);width:100%;max-width:520px;margin:0 auto;border-radius:22px 22px 0 0;padding:22px 20px 26px;max-height:88vh;overflow-y:auto;}
+  .sheet h2{font-size:20px;margin-bottom:4px;}
+  .sheet .hint{color:var(--ink-soft);font-size:13.5px;margin:0 0 18px;}
+  .imgpreview{width:100%;max-height:260px;object-fit:contain;border-radius:12px;margin-bottom:16px;background:var(--card);}
+  .spinner-row{display:flex;align-items:center;gap:10px;color:var(--ink-soft);font-size:14px;padding:8px 0 4px;}
+  .spinner{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--rust);animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .closebtn{position:absolute;top:16px;right:18px;background:none;border:none;font-size:20px;color:var(--ink-soft);cursor:pointer;}
+  .field-row{display:flex;gap:10px;}
+  .field-row > div{flex:1;}
+  .errbox{background:#F3E4DF;border:1px solid #E0BBAE;color:var(--rust-dark);font-size:13px;padding:10px 12px;border-radius:10px;margin-bottom:14px;}
+  .deletebtn{width:100%;background:none;border:1px solid #D8B9AE;color:var(--rust-dark);border-radius:999px;padding:13px;font-size:14.5px;cursor:pointer;font-family:inherit;margin-top:6px;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const CATEGORIES = ['Top','Trousers','Skirt','Dress','Jacket/Coat','Jumper/Knitwear','Shoes','Bag','Accessory','Other'];
+const FORMALITY = ['Casual','Smart Casual','Work','Dressy'];
+const CAT_COLORS = {
+  'Top':'#A6503F','Trousers':'#6F7C58','Skirt':'#8D6A9F','Dress':'#B5793F',
+  'Jacket/Coat':'#4B6480','Jumper/Knitwear':'#8A6F4E','Shoes':'#5B5550',
+  'Bag':'#7C8A6E','Accessory':'#A65F7C','Other':'#8C877E'
+};
+
+let state = {
+  screen: 'loading',
+  username: null,
+  closet: [],
+  filter: 'All',
+  modal: null,
+  pendingImage: null,
+  form: null,
+  formError: null,
+  analyzing: false,
+  editingId: null,
+  queue: [],
+  queueTotal: 0,
+};
+
+// Bumped whenever an in-flight add/analyze request should be treated as
+// stale (a new photo starts processing, or the user cancels the modal),
+// so a late-resolving fetch/resize from an old request can't clobber
+// state that belongs to a different item.
+let activeRequestId = 0;
+
+async function storageGet(key, shared){
+  try{ const r = await window.storage.get(key, shared); return r ? r.value : null; }
+  catch(e){ return null; }
+}
+async function storageSet(key, value, shared){
+  try{ await window.storage.set(key, value, shared); return true; }
+  catch(e){ return false; }
+}
+
+async function init(){
+  const last = await storageGet('lastUsername', false);
+  if(last){
+    state.username = last;
+    await loadCloset();
+    state.screen = 'closet';
+  } else {
+    state.screen = 'login';
+  }
+  render();
+}
+
+async function loadCloset(){
+  const raw = await storageGet('closet:' + state.username, true);
+  try{
+    const parsed = raw ? JSON.parse(raw) : [];
+    state.closet = Array.isArray(parsed) ? parsed : [];
+  } catch(e){
+    state.closet = [];
+  }
+}
+async function persistCloset(){
+  await storageSet('closet:' + state.username, JSON.stringify(state.closet), true);
+}
+
+function setUsername(name){
+  name = name.trim();
+  if(!name) return;
+  state.username = name;
+  storageSet('lastUsername', name, false);
+  loadCloset().then(()=>{ state.screen='closet'; render(); });
+}
+
+function switchUser(){
+  state.username = null;
+  state.closet = [];
+  state.filter = 'All';
+  state.screen = 'login';
+  render();
+}
+
+function resizeImage(file){
+  return new Promise((resolve, reject)=>{
+    if(!file || !file.type || file.type.indexOf('image') === -1){
+      reject(new Error('That file did not look like a photo -- try picking it again.'));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      const img = new Image();
+      img.onload = ()=>{
+        try{
+          const maxDim = 700;
+          let w = img.width, h = img.height;
+          if(w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
+          else if(h >= w && h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.75));
+        } catch(err){
+          reject(new Error('Could not process that photo -- try a different one.'));
+        }
+      };
+      img.onerror = () => reject(new Error('Could not open that photo -- try a different one.'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('Could not read that photo -- try a different one.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function analyzeImage(dataUrl){
+  const base64 = dataUrl.split(',')[1];
+  const prompt = 'You are a fashion stylist assistant. Look at this photo of a single clothing item and respond with ONLY a JSON object -- no markdown, no code fences, no commentary. Use exactly these fields: {"category": one of ' + JSON.stringify(CATEGORIES) + ', "color": short primary color name, "pattern": short pattern description such as plain, striped, floral, checked, "formality": one of ' + JSON.stringify(FORMALITY) + ', "styleTags": array of up to 4 short descriptive words}';
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 25000);
+  let response;
+  try{
+    response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } },
+            { type: 'text', text: prompt }
+          ]
+        }]
+      })
+    });
+  } catch(fetchErr){
+    if(fetchErr.name === 'AbortError'){
+      throw new Error('Timed out waiting for a response. Check your connection and try again.');
+    }
+    throw new Error('Could not reach the analysis service. Check your connection and try again.');
+  } finally {
+    clearTimeout(timeoutId);
+  }
+  if(!response.ok){
+    let detail = '';
+    try{ const errBody = await response.json(); detail = (errBody && errBody.error && errBody.error.message) || ''; } catch(e){}
+    throw new Error('Analysis failed (' + response.status + ')' + (detail ? ': ' + detail : '.'));
+  }
+  const data = await response.json();
+  const textBlock = (data.content || []).find(b => b.type === 'text');
+  if(!textBlock){
+    throw new Error('No response received -- try again.');
+  }
+  let raw = textBlock.text.replace(/```json|```/g, '').trim();
+  try{
+    return JSON.parse(raw);
+  } catch(e){
+    throw new Error('Could not read the response -- try again.');
+  }
+}
+
+function handleFiles(fileList){
+  const files = Array.from(fileList || []);
+  if(files.length === 0) return;
+  state.queue = files;
+  state.queueTotal = files.length;
+  processNextInQueue();
+}
+
+function processNextInQueue(){
+  if(state.queue.length === 0){
+    closeModal();
+    return;
+  }
+  const file = state.queue.shift();
+  processFile(file);
+}
+
+async function processFile(file){
+  const requestId = ++activeRequestId;
+  state.modal = 'add';
+  state.analyzing = true;
+  state.pendingImage = null;
+  state.form = null;
+  state.formError = null;
+  render();
+  try{
+    const dataUrl = await resizeImage(file);
+    if(requestId !== activeRequestId) return;
+    state.pendingImage = dataUrl;
+    render();
+    const tags = await analyzeImage(dataUrl);
+    if(requestId !== activeRequestId) return;
+    state.form = {
+      category: CATEGORIES.includes(tags.category) ? tags.category : 'Other',
+      color: tags.color || '',
+      pattern: tags.pattern || '',
+      formality: FORMALITY.includes(tags.formality) ? tags.formality : 'Casual',
+      styleTags: Array.isArray(tags.styleTags) ? tags.styleTags.join(', ') : ''
+    };
+  } catch(e){
+    if(requestId !== activeRequestId) return;
+    state.formError = (e && e.message) ? e.message : "Couldn't quite make sense of that photo -- no problem, just fill in the details below.";
+    state.form = { category: 'Other', color: '', pattern: '', formality: 'Casual', styleTags: '' };
+  } finally {
+    if(requestId === activeRequestId){
+      state.analyzing = false;
+      render();
+    }
+  }
+}
+
+function openChoosePhoto(){
+  state.modal = 'choose';
+  state.pendingImage = null;
+  state.form = null;
+  state.formError = null;
+  state.queue = [];
+  state.queueTotal = 0;
+  render();
+}
+
+function closeModal(){
+  activeRequestId++;
+  state.modal = null;
+  state.pendingImage = null;
+  state.form = null;
+  state.formError = null;
+  state.analyzing = false;
+  state.editingId = null;
+  state.queue = [];
+  state.queueTotal = 0;
+  render();
+}
+
+function skipQueueItem(){
+  processNextInQueue();
+}
+
+function saveItem(){
+  if(!state.form) return;
+  const item = {
+    id: 'item_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+    image: state.pendingImage,
+    category: state.form.category,
+    color: state.form.color.trim(),
+    pattern: state.form.pattern.trim(),
+    formality: state.form.formality,
+    styleTags: state.form.styleTags.split(',').map(s=>s.trim()).filter(Boolean),
+    addedAt: Date.now()
+  };
+  state.closet.unshift(item);
+  persistCloset();
+  if(state.queue.length > 0){
+    processNextInQueue();
+  } else {
+    closeModal();
+  }
+}
+
+function openItem(id){
+  const item = state.closet.find(i => i.id === id);
+  if(!item) return;
+  activeRequestId++;
+  state.editingId = id;
+  state.pendingImage = item.image;
+  state.form = {
+    category: item.category, color: item.color, pattern: item.pattern,
+    formality: item.formality, styleTags: item.styleTags.join(', ')
+  };
+  state.formError = null;
+  state.analyzing = false;
+  state.modal = 'edit';
+  render();
+}
+
+function saveEdit(){
+  const idx = state.closet.findIndex(i => i.id === state.editingId);
+  if(idx === -1) return;
+  const item = state.closet[idx];
+  item.category = state.form.category;
+  item.color = state.form.color.trim();
+  item.pattern = state.form.pattern.trim();
+  item.formality = state.form.formality;
+  item.styleTags = state.form.styleTags.split(',').map(s=>s.trim()).filter(Boolean);
+  persistCloset();
+  closeModal();
+}
+
+function deleteItem(){
+  state.closet = state.closet.filter(i => i.id !== state.editingId);
+  persistCloset();
+  closeModal();
+}
+
+function setFilter(cat){ state.filter = cat; render(); }
+
+function escapeHtml(s){
+  return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderLogin(){
+  return '<div class="login-wrap">' +
+    '<h1>Your closet</h1>' +
+    '<p>Enter a name so your items are saved under your own closet.</p>' +
+    '<input type="text" id="nameInput" placeholder="e.g. Freya" autofocus>' +
+    '<button class="btn-primary" onclick="const v=document.getElementById(\'nameInput\').value; setUsername(v);">Continue</button>' +
+    '</div>';
+}
+
+function renderCard(item){
+  const color = CAT_COLORS[item.category] || '#8C877E';
+  return '<div class="card" onclick="openItem(\'' + item.id + '\')">' +
+    '<img src="' + item.image + '" alt="">' +
+    '<div class="meta">' +
+      '<div class="cat"><span class="dot" style="background:' + color + '"></span>' + escapeHtml(item.category) + '</div>' +
+      '<div class="sub">' + escapeHtml(item.color) + (item.formality ? ' &middot; ' + escapeHtml(item.formality) : '') + '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderCloset(){
+  const filtered = state.filter === 'All' ? state.closet : state.closet.filter(i => i.category === state.filter);
+  const chips = ['All', ...CATEGORIES].map(c =>
+    '<button class="chip ' + (state.filter === c ? 'active' : '') + '" onclick="setFilter(\'' + c + '\')">' + c + '</button>'
+  ).join('');
+  let body;
+  if(state.closet.length === 0){
+    body = '<div class="empty"><h2>Start your closet</h2><p>Add a photo of something you already own, and it will go in here for building outfits around later.</p></div>';
+  } else if(filtered.length === 0){
+    body = '<div class="empty"><p>Nothing in this category yet.</p></div>';
+  } else {
+    body = '<div class="grid">' + filtered.map(renderCard).join('') + '</div>';
+  }
+  return '<div class="header"><h1 class="wordmark">Closet</h1><button class="switchuser" onclick="switchUser()">' + escapeHtml(state.username) + ' &middot; switch</button></div>' +
+    '<div class="chiprow">' + chips + '</div>' +
+    body;
+}
+
+function renderChooseModal(){
+  return '<div class="overlay" onclick="if(event.target===this) closeModal()">' +
+    '<div class="sheet">' +
+    '<button class="closebtn" onclick="closeModal()">&times;</button>' +
+    '<h2>Add an item</h2>' +
+    '<p class="hint">Take a clear photo of one item on its own, if you can.</p>' +
+    '<input type="file" accept="image/*" capture="environment" id="cameraInput" style="display:none" onchange="handleFiles(this.files)">' +
+    '<input type="file" accept="image/*" multiple id="libraryInput" style="display:none" onchange="handleFiles(this.files)">' +
+    '<button class="btn-primary" onclick="document.getElementById(\'cameraInput\').click()">Take a photo</button>' +
+    '<button class="btn-ghost" onclick="document.getElementById(\'libraryInput\').click()">Choose from library</button>' +
+    '<p class="hint" style="margin-top:14px;margin-bottom:0;">Choosing from your library lets you pick several at once -- you\'ll confirm the details for each, one by one.</p>' +
+    '</div></div>';
+}
+
+function renderFormModal(isEdit){
+  // state.form can still be null here: while an item is analyzing (state.analyzing
+  // === true) the form fields aren't shown yet, but this function runs anyway to
+  // build the (unused) select options below, so fall back to a safe empty shape
+  // rather than crashing on state.form.category etc.
+  const f = state.form || { category: '', color: '', pattern: '', formality: '', styleTags: '' };
+  const catOptions = CATEGORIES.map(c => '<option value="' + c + '"' + (f.category===c?' selected':'') + '>' + c + '</option>').join('');
+  const formOptions = FORMALITY.map(c => '<option value="' + c + '"' + (f.formality===c?' selected':'') + '>' + c + '</option>').join('');
+  const errBlock = state.formError ? '<div class="errbox">' + escapeHtml(state.formError) + '</div>' : '';
+  const spinner = state.analyzing ? '<div class="spinner-row"><div class="spinner"></div>Looking closely at this item&hellip;</div>' : '';
+  const deleteBtn = isEdit ? '<button class="deletebtn" onclick="deleteItem()">Remove from closet</button>' : '';
+  const progress = (!isEdit && state.queueTotal > 1) ?
+    '<p class="hint" style="margin-bottom:14px;">Item ' + (state.queueTotal - state.queue.length) + ' of ' + state.queueTotal + '</p>' : '';
+  const skipBtn = (!isEdit && !state.analyzing && state.queue.length > 0) ?
+    '<button class="btn-ghost" onclick="skipQueueItem()">Skip this one</button>' : '';
+  return '<div class="overlay" onclick="if(event.target===this) closeModal()">' +
+    '<div class="sheet">' +
+    '<button class="closebtn" onclick="closeModal()">&times;</button>' +
+    '<h2>' + (isEdit ? 'Edit item' : 'Confirm details') + '</h2>' +
+    progress +
+    (state.pendingImage ? '<img class="imgpreview" src="' + state.pendingImage + '">' : '') +
+    spinner + errBlock +
+    (state.analyzing ? '' :
+      '<label>Category</label><select id="f_category">' + catOptions + '</select>' +
+      '<div class="field-row">' +
+        '<div><label>Colour</label><input type="text" id="f_color" value="' + escapeHtml(f.color) + '"></div>' +
+        '<div><label>Pattern</label><input type="text" id="f_pattern" value="' + escapeHtml(f.pattern) + '"></div>' +
+      '</div>' +
+      '<label>Formality</label><select id="f_formality">' + formOptions + '</select>' +
+      '<label>Style words (comma separated)</label><input type="text" id="f_tags" value="' + escapeHtml(f.styleTags) + '">' +
+      '<button class="btn-primary" onclick="' + (isEdit ? 'commitEdit()' : 'commitSave()') + '">' + (isEdit ? 'Save changes' : 'Add to closet') + '</button>' +
+      skipBtn +
+      deleteBtn
+    ) +
+    '</div></div>';
+}
+
+function commitSave(){ readFormInputs(); saveItem(); }
+function commitEdit(){ readFormInputs(); saveEdit(); }
+function readFormInputs(){
+  state.form = {
+    category: document.getElementById('f_category').value,
+    color: document.getElementById('f_color').value,
+    pattern: document.getElementById('f_pattern').value,
+    formality: document.getElementById('f_formality').value,
+    styleTags: document.getElementById('f_tags').value
+  };
+}
+
+function renderModal(){
+  if(state.modal === 'choose') return renderChooseModal();
+  if(state.modal === 'add') return renderFormModal(false);
+  if(state.modal === 'edit') return renderFormModal(true);
+  return '';
+}
+
+function render(){
+  const root = document.getElementById('root');
+  if(state.screen === 'loading'){
+    root.innerHTML = '';
+    return;
+  }
+  if(state.screen === 'login'){
+    root.innerHTML = renderLogin();
+    return;
+  }
+  let html = renderCloset();
+  html += '<div class="bottombar"><div class="bottombar-inner"><button class="btn-primary" onclick="openChoosePhoto()">Add item</button></div></div>';
+  html += renderModal();
+  root.innerHTML = html;
+
+  const nameInput = document.getElementById('nameInput');
+  if(nameInput){
+    nameInput.addEventListener('keydown', e => { if(e.key==='Enter') setUsername(nameInput.value); });
+  }
+}
+
+init();
+
+window.addEventListener('error', function(e){
+  const root = document.getElementById('root');
+  const banner = document.createElement('div');
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#7E3B2E;color:#fff;padding:10px 16px;font-size:13px;z-index:999;font-family:sans-serif;';
+  banner.textContent = 'Something went wrong: ' + (e.message || 'unknown error');
+  root.parentNode.insertBefore(banner, root);
+});
+window.addEventListener('unhandledrejection', function(e){
+  const root = document.getElementById('root');
+  const banner = document.createElement('div');
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#7E3B2E;color:#fff;padding:10px 16px;font-size:13px;z-index:999;font-family:sans-serif;';
+  banner.textContent = 'Something went wrong: ' + ((e.reason && e.reason.message) || e.reason || 'unknown error');
+  root.parentNode.insertBefore(banner, root);
+});
+
+</script>
+</body>
+</html>
